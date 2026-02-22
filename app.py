@@ -1,12 +1,19 @@
 import os
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from openai import OpenAI
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Store conversation in memory (simple version)
+conversation_history = []
+
 
 @app.route("/")
 def home():
@@ -14,19 +21,31 @@ def home():
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    user_message = request.json["message"]
+    data = request.get_json()
+
+    if not data or "message" not in data:
+        return jsonify({"error": "No message provided"}), 400
+
+    user_message = data["message"]
+
+    conversation_history.append({
+        "role": "user",
+        "content": user_message
+    })
 
     response = client.chat.completions.create(
         model="gpt-5.2",
-        messages=[
-            {"role": "user", "content": user_message}
-        ]
+        messages=conversation_history
     )
 
-    reply = response.choices[0].message.content
+    ai_reply = response.choices[0].message.content
 
-    return jsonify({"reply": reply})
+    conversation_history.append({
+        "role": "assistant",
+        "content": ai_reply
+    })
 
+    return jsonify({"response": ai_reply})
 
 
 if __name__ == "__main__":

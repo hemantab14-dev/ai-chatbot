@@ -4,28 +4,40 @@
     <title>My AI Chatbot</title>
 </head>
 <body>
-    <h2>AI Chatbot</h2>
+    <h1>My AI Chatbot</h1>
 
-    <input type="text" id="message" placeholder="Type your message">
+    <div id="chat-box" style="height:300px; overflow-y:auto; border:1px solid #ccc; padding:10px;"></div>
+
+    <input type="text" id="user-input">
     <button onclick="sendMessage()">Send</button>
 
-    <p id="response"></p>
+   <script>
+async function sendMessage() {
+    const input = document.getElementById("user-input");
+    const chatBox = document.getElementById("chat-box");
 
-    <script>
-        async function sendMessage() {
-            const message = document.getElementById("message").value;
+    const userMessage = input.value;
 
-            const res = await fetch("/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ message: message })
-            });
+    if (!userMessage) return;
 
-            const data = await res.json();
-            document.getElementById("response").innerText = data.reply;
-        }
-    </script>
+    // Show user message
+    chatBox.innerHTML += "<div><b>You:</b> " + userMessage + "</div>";
+
+    input.value = "";
+
+    const response = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage })
+    });
+
+    const data = await response.json();
+
+    // Show bot reply
+    chatBox.innerHTML += "<div><b>Bot:</b> " + data.response + "</div>";
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+</script>
 </body>
 </html>
